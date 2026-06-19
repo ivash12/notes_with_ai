@@ -1,12 +1,14 @@
 import streamlit as st
-from PIL import Image
 
 st.title("Study with AI")
 st.subheader("Download the photo of your notes and get the quizes to be able to remember what you have learned")
 
+
 uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
+
+if uploaded_file is not None and "photo_path" not in st.session_state:
+    with open("saved_photo.jpg", "wb") as f:
+        f.write(uploaded_file.getbuffer())
     st.write("Choose the following option")
     key_concepts = st.button("Key concepts")
     quizes = st.button("Quizes")
