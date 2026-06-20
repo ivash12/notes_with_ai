@@ -29,6 +29,18 @@ def get_key_concepts():
         "explicitly instead of guessing."
         ])
     return response.text
+def get_quizes():
+    if "concepts" in st.session_state:
+        load_dotenv()
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents= f"Your task is to generate quizes based on text:{st.session_state["concepts"]}. "
+                      f"I want you to generate 3-5 quizes (choose how many you want to generate based"
+                      f"on the size of the text, that size should be enough for student to remember "
+                      f"all concepts from the uploaded text. "
+        )
 
 if __name__ == "__main__":
     get_key_concepts()
