@@ -10,6 +10,5 @@ with st.spinner("Getting key concepts..."):
             st.write(st.session_state["concepts"])
         except google.genai.errors.ServerError:
             st.write("Sorry, the server is busy now. Please, try later")
-
     else:
         st.write(st.session_state["concepts"])

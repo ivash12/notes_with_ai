@@ -1,10 +1,7 @@
 import streamlit as st
 
 st.title("Study with AI")
-st.subheader("Download the photo of your notes and get the quizes to be able to remember what you have learned")
-
-
-
+st.subheader("Download the photo of your notes and get the quizzes to be able to remember what you have learned")
 
 if "photo_path" not in st.session_state:
     uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
@@ -17,12 +14,12 @@ if "photo_path" in st.session_state:
     st.image(st.session_state["photo_path"])
     st.write("Choose the following option")
     key_concepts = st.button("Key concepts")
-    quizes = st.button("Quizes")
+    quizzes = st.button("Quizzes")
     another_photo = st.button("Choose another photo")
     if key_concepts:
         st.switch_page("pages/key_concepts.py")
-    if quizes:
-        st.switch_page("pages/quizes.py")
+    if quizzes:
+        st.switch_page("pages/quizzes.py")
     if another_photo:
         del st.session_state["photo_path"]
         st.rerun()
