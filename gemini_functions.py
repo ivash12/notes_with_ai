@@ -1,16 +1,12 @@
-import os
 import streamlit as st
 from google import genai
 from google.genai import types
-from dotenv import load_dotenv
 import json
 
 def get_key_concepts():
     with open('saved_photo.jpg', 'rb') as f:
         image_bytes = f.read()
-    load_dotenv()
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = genai.Client()
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=[
@@ -33,9 +29,7 @@ def get_key_concepts():
     return response.text
 
 def qemini_quizzes():
-    load_dotenv()
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = genai.Client()
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=f"Generate quiz questions based on this text: {st.session_state['concepts']}\n\n"

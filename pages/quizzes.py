@@ -8,7 +8,6 @@ with st.spinner("Getting the quizzes..."):
     if "quizzes" not in st.session_state:
         st.session_state["quizzes"] = get_quizzes()
     for i in range(len(st.session_state["quizzes"])):
-        #name = f"question{i+1}"
         answer = st.radio(st.session_state["quizzes"][i]["question"],
                  st.session_state["quizzes"][i]["options"],
                  index=None)
@@ -21,5 +20,5 @@ if check:
             if names[i] == st.session_state["quizzes"][i]["correct"]:
                 st.write(f":green[Your answer '{names[i]}' is correct!]")
             else:
-                st.write(f":red[Your answer '{names[i]}' is incorrect."
-                         f"Correct answer is '{st.session_state["quizzes"][i]["correct"]}']")
+                st.write(f":red[Your answer '{names[i]}' is incorrect.]")
+                st.write(f":red[Correct answer is '{st.session_state["quizzes"][i]["correct"]}']")
