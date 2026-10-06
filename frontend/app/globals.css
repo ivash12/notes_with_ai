@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f5ef;
+  --card: #ffffff;
+  --ink: #1d1b16;
+  --muted: #6b675d;
+  --line: #e4e0d5;
+  --accent: #4338ca;
+  --accent-soft: #eceafd;
+  --on-accent: #ffffff;
+  --good: #15803d;
+  --good-soft: #e7f6ec;
+  --bad: #b91c1c;
+  --bad-soft: #fdecec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #12110f;
+    --card: #1b1a17;
+    --ink: #f1eee6;
+    --muted: #a39e91;
+    --line: #2f2d28;
+    --accent: #a5b4fc;
+    --accent-soft: #23223d;
+    --on-accent: #14132b;
+    --good: #4ade80;
+    --good-soft: #142a1c;
+    --bad: #f87171;
+    --bad-soft: #321616;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-serif-display);
+}
+
+body {
+  background-color: var(--paper);
+  /* faint ruled-notebook dots */
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ink);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.rise {
+  animation: rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}

@@ -1,4 +1,3 @@
-import streamlit as st
 from google import genai
 import google
 from google.genai import types
@@ -33,12 +32,12 @@ def get_key_concepts():
         ])
     return response.text
 
-def gemini_quizzes():
+def gemini_quizzes(concepts):
     client = genai.Client(api_key=key)
     try:
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=f"Generate quiz questions based on this text: {st.session_state['concepts']}\n\n"
+            contents=f"Generate quiz questions based on this text: {concepts}\n\n"
             "Count how many distinct concepts or terms are present in the text, and generate "
             "one question per distinct concept, with a minimum of 3 and a maximum of 7 questions.\n\n"
             "Each question must be about a concept or term mentioned in the text above. "
@@ -50,15 +49,15 @@ def gemini_quizzes():
             "match one of the strings in \"options\"."
         )
         return json.loads(response.text.strip().strip("```json").strip("```"))
-    except google.errors.ServerError:
+    except google.genai.errors.ServerError:
         return None
     except json.JSONDecodeError:
         return None
 
-def get_quizzes():
-    if "concepts" not in st.session_state:
-        st.session_state["concepts"] = get_key_concepts()
-    return gemini_quizzes()
+def get_quizzes(concepts=None):
+    if concepts is None:
+        concepts = get_key_concepts()
+    return concepts, gemini_quizzes(concepts)
 
 if __name__ == "__main__":
     print(get_quizzes())
