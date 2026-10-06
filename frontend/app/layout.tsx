@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Geist } from "next/font/google";
 import Link from "next/link";
+import { ThemeToggle, themeScript } from "@/components/theme-toggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,10 +24,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <header className="mx-auto w-full max-w-2xl px-4 pt-6 sm:pt-10">
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 pt-6 sm:pt-10">
           <Link
             href="/"
             className="inline-flex items-center gap-2 font-serif text-lg font-semibold tracking-tight"
@@ -39,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </span>
             Study with AI
           </Link>
+          <ThemeToggle />
         </header>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 pt-8 pb-16 sm:pt-12">
           {children}
