@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from gemini_functions import get_key_concepts, get_quizzes
+from gemini_functions import EmptyResponseError, get_key_concepts, get_quizzes
 
 PHOTO_PATH = "saved_photo.jpg"
 ALLOWED_EXTENSIONS = (".jpg", ".jpeg", ".png")
@@ -50,6 +50,8 @@ def key_concepts():
     require_photo()
     try:
         return {"concepts": get_key_concepts()}
+    except EmptyResponseError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except google.genai.errors.ServerError:
         raise HTTPException(status_code=503, detail=BUSY_MESSAGE)
     except google.genai.errors.APIError as e:
@@ -61,6 +63,8 @@ def quizzes(body: QuizRequest):
     require_photo()
     try:
         concepts, quiz = get_quizzes(body.concepts)
+    except EmptyResponseError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except google.genai.errors.ServerError:
         raise HTTPException(status_code=503, detail=BUSY_MESSAGE)
     except google.genai.errors.APIError as e:

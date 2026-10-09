@@ -55,7 +55,12 @@ let quizzesRequest: Promise<void> | null = null;
 
 export function loadConcepts() {
   conceptsRequest ??= fetchKeyConcepts()
-    .then((concepts) => setSession({ concepts }))
+    .then((concepts) => {
+      if (!concepts?.trim()) {
+        throw new Error("Gemini couldn't read anything from this image");
+      }
+      setSession({ concepts });
+    })
     .finally(() => {
       conceptsRequest = null;
     });

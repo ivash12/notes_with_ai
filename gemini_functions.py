@@ -7,6 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 key = os.getenv("GEMINI_API_KEY")
+
+class EmptyResponseError(Exception):
+    """Gemini answered without any text (e.g. a blocked or empty response)."""
+
+def response_text(response, error_message):
+    text = (response.text or "").strip()
+    if not text:
+        raise EmptyResponseError(error_message)
+    return text
+
 def get_key_concepts():
     with open('saved_photo.jpg', 'rb') as f:
         image_bytes = f.read()
@@ -30,7 +40,7 @@ def get_key_concepts():
         "If the image is unclear, blurry, or contains no readable text, say so "
         "explicitly instead of guessing."
         ])
-    return response.text
+    return response_text(response, "Gemini couldn't read anything from this image")
 
 def gemini_quizzes(concepts):
     client = genai.Client(api_key=key)
@@ -48,7 +58,8 @@ def gemini_quizzes(concepts):
             "Each question must have exactly 3 options, and the \"correct\" value must exactly "
             "match one of the strings in \"options\"."
         )
-        return json.loads(response.text.strip().strip("```json").strip("```"))
+        text = response_text(response, "Gemini returned an empty response for the quiz. Please try again.")
+        return json.loads(text.strip("```json").strip("```"))
     except google.genai.errors.ServerError:
         return None
     except json.JSONDecodeError:
