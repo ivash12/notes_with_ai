@@ -36,8 +36,19 @@ function subscribe(listener: () => void) {
   };
 }
 
+// In-flight requests are shared so a re-mounted page never asks Gemini twice.
+let conceptsRequest: Promise<void> | null = null;
+let quizzesRequest: Promise<void> | null = null;
+
 export function setSession(patch: Partial<Session>) {
-  session = { ...getSnapshot(), ...patch };
+  const previous = getSnapshot();
+  if ("photoVersion" in patch && patch.photoVersion !== previous.photoVersion) {
+    // A different photo: anything still in flight belongs to the old one, so
+    // the next page must start its own request instead of reusing it.
+    conceptsRequest = null;
+    quizzesRequest = null;
+  }
+  session = { ...previous, ...patch };
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   } catch {}
@@ -49,27 +60,32 @@ export function useSession(): Session | null {
   return useSyncExternalStore(subscribe, getSnapshot, () => null);
 }
 
-// In-flight requests are shared so a re-mounted page never asks Gemini twice.
-let conceptsRequest: Promise<void> | null = null;
-let quizzesRequest: Promise<void> | null = null;
-
 export function loadConcepts() {
-  conceptsRequest ??= fetchKeyConcepts()
+  if (conceptsRequest) return conceptsRequest;
+  // The photo this request is for; a result for any other photo is dropped.
+  const { photoVersion } = getSnapshot();
+  const request: Promise<void> = fetchKeyConcepts()
     .then((concepts) => {
+      if (getSnapshot().photoVersion !== photoVersion) return;
       if (!concepts?.trim()) {
         throw new Error("Gemini couldn't read anything from this image");
       }
       setSession({ concepts });
     })
     .finally(() => {
-      conceptsRequest = null;
+      // Only clear our own slot: a newer request may already live there.
+      if (conceptsRequest === request) conceptsRequest = null;
     });
-  return conceptsRequest;
+  conceptsRequest = request;
+  return request;
 }
 
 export function loadQuizzes() {
-  quizzesRequest ??= fetchQuizzes(getSnapshot().concepts)
+  if (quizzesRequest) return quizzesRequest;
+  const { photoVersion, concepts: knownConcepts } = getSnapshot();
+  const request: Promise<void> = fetchQuizzes(knownConcepts)
     .then(({ concepts, quizzes }) => {
+      if (getSnapshot().photoVersion !== photoVersion) return;
       setSession({ concepts });
       if (!quizzes) {
         throw new Error("Couldn't generate the quiz this time. Please try again.");
@@ -77,7 +93,8 @@ export function loadQuizzes() {
       setSession({ quizzes });
     })
     .finally(() => {
-      quizzesRequest = null;
+      if (quizzesRequest === request) quizzesRequest = null;
     });
-  return quizzesRequest;
+  quizzesRequest = request;
+  return request;
 }
