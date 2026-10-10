@@ -17,7 +17,7 @@ export default function KeyConceptsPage() {
   const session = useSession();
   const [error, setError] = useState<string | null>(null);
 
-  const hasPhoto = session != null && session.photoVersion !== null;
+  const hasPhoto = session != null && session.photoId !== null;
   const concepts = session?.concepts ?? null;
 
   useEffect(() => {

@@ -3,3 +3,4 @@
 .env
 __pycache__/
 saved_photo.jpg
+uploads/

@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import google
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -8,9 +9,11 @@ from pydantic import BaseModel
 
 from gemini_functions import EmptyResponseError, get_key_concepts, get_quizzes
 
-PHOTO_PATH = "saved_photo.jpg"
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 ALLOWED_EXTENSIONS = (".jpg", ".jpeg", ".png")
 BUSY_MESSAGE = "Sorry, the server is busy now. Please, try later"
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="Notes with AI")
 app.add_middleware(
@@ -21,35 +24,50 @@ app.add_middleware(
 )
 
 
-class QuizRequest(BaseModel):
+class PhotoRequest(BaseModel):
+    photo_id: str
+
+
+class QuizRequest(PhotoRequest):
     concepts: str | None = None
 
 
-def require_photo():
-    if not os.path.exists(PHOTO_PATH):
-        raise HTTPException(status_code=404, detail="Upload a photo of your notes first")
+def find_photo(photo_id: str) -> str:
+    # Only a real uuid is ever turned into a file name, so an id can't point
+    # outside the uploads folder.
+    try:
+        name = uuid.UUID(photo_id).hex
+    except ValueError:
+        name = None
+    if name is not None:
+        for extension in ALLOWED_EXTENSIONS:
+            path = os.path.join(UPLOAD_DIR, name + extension)
+            if os.path.exists(path):
+                return path
+    raise HTTPException(status_code=404, detail="Photo not found. Please upload it again.")
 
 
 @app.post("/api/photo")
 def upload_photo(file: UploadFile = File(...)):
-    if not (file.filename or "").lower().endswith(ALLOWED_EXTENSIONS):
+    extension = os.path.splitext(file.filename or "")[1].lower()
+    if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Only jpg, jpeg and png images are supported")
-    with open(PHOTO_PATH, "wb") as f:
+    photo_id = uuid.uuid4().hex
+    with open(os.path.join(UPLOAD_DIR, photo_id + extension), "wb") as f:
         f.write(file.file.read())
-    return {"ok": True}
+    return {"photo_id": photo_id}
 
 
-@app.get("/api/photo")
-def get_photo():
-    require_photo()
-    return FileResponse(PHOTO_PATH, headers={"Cache-Control": "no-store"})
+@app.get("/api/photo/{photo_id}")
+def get_photo(photo_id: str):
+    return FileResponse(find_photo(photo_id), headers={"Cache-Control": "no-store"})
 
 
 @app.post("/api/key-concepts")
-def key_concepts():
-    require_photo()
+def key_concepts(body: PhotoRequest):
+    path = find_photo(body.photo_id)
     try:
-        return {"concepts": get_key_concepts()}
+        return {"concepts": get_key_concepts(path)}
     except EmptyResponseError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except google.genai.errors.ServerError:
@@ -60,9 +78,9 @@ def key_concepts():
 
 @app.post("/api/quizzes")
 def quizzes(body: QuizRequest):
-    require_photo()
+    path = find_photo(body.photo_id)
     try:
-        concepts, quiz = get_quizzes(body.concepts)
+        concepts, quiz = get_quizzes(path, body.concepts)
     except EmptyResponseError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except google.genai.errors.ServerError:

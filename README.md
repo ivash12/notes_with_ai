@@ -10,9 +10,11 @@ A Next.js + FastAPI app that turns a photo of your study notes into a concise su
 
 ## How it works
 
-First, you upload a photo of your notes on the Next.js front end, which sends it to a small FastAPI server. Then you choose whether you want to see key concepts from your notes or take a quiz. Once you pick an option, the app navigates you to that page, where Gemini generates either the key concepts or a JSON-structured quiz based on those concepts, which gets shown to you as radio buttons — you can then check your answers by clicking a button.
+First, you upload a photo of your notes on the Next.js front end, which sends it to a small FastAPI server. The server saves each upload as its own file in an `uploads/` folder and answers with a random `photo_id`; the front end sends that id back with every later request, so several tabs or users never overwrite each other's photo. Then you choose whether you want to see key concepts from your notes or take a quiz. Once you pick an option, the app navigates you to that page, where Gemini generates either the key concepts or a JSON-structured quiz based on those concepts, which gets shown to you as radio buttons — you can then check your answers by clicking a button.
 
-The front end keeps the results in the browser tab's `sessionStorage` to save time and API tokens, since it only generates the key concepts once and then reuses them to generate the quizzes.
+The front end keeps the `photo_id` and the results in the browser tab's `sessionStorage` to save time and API tokens, since it only generates the key concepts once and then reuses them to generate the quizzes. If the server no longer has the photo for a stored id, the tab goes back to the upload screen.
+
+Uploaded photos stay in `uploads/` until you delete them — nothing cleans the folder up automatically.
 
 ## Why I built it
 
@@ -63,6 +65,7 @@ notes_with_ai/
 ├── gemini_functions.py      # All Gemini API calls (vision + text)
 ├── server.py                # FastAPI endpoints wrapping the Gemini functions
 ├── requirements.txt
+├── uploads/                 # Uploaded photos, one file per photo_id (git-ignored, created on first run)
 └── frontend/                # Next.js app
     ├── app/
     │   ├── page.tsx              # Upload page — handles the photo, navigation

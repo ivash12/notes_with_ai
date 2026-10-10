@@ -18,7 +18,7 @@ export default function QuizzesPage() {
   const session = useSession();
   const [error, setError] = useState<string | null>(null);
 
-  const hasPhoto = session != null && session.photoVersion !== null;
+  const hasPhoto = session != null && session.photoId !== null;
   const quizzes = session?.quizzes ?? null;
 
   useEffect(() => {

@@ -7,6 +7,16 @@ export type Quiz = {
   correct: string;
 };
 
+/** A response the backend answered with an error status. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
@@ -18,36 +28,58 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
       typeof body?.detail === "string"
         ? body.detail
         : `Request failed (${response.status})`,
+      response.status,
     );
   }
   return body as T;
 }
 
-export function photoUrl(version: number) {
-  return `${API_URL}/api/photo?v=${version}`;
+function postJson<T>(path: string, body: unknown) {
+  return request<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function photoUrl(photoId: string) {
+  return `${API_URL}/api/photo/${photoId}`;
+}
+
+/** False only when the backend says the photo is gone, not when it's unreachable. */
+export async function photoExists(photoId: string) {
+  try {
+    const response = await fetch(photoUrl(photoId));
+    return response.status !== 404;
+  } catch {
+    return true;
+  }
 }
 
 export async function uploadPhoto(file: File) {
   const form = new FormData();
   form.append("file", file);
-  await request("/api/photo", { method: "POST", body: form });
+  const data = await request<{ photo_id: string }>("/api/photo", {
+    method: "POST",
+    body: form,
+  });
+  return data.photo_id;
 }
 
-export async function fetchKeyConcepts() {
-  const data = await request<{ concepts: string }>("/api/key-concepts", {
-    method: "POST",
+export async function fetchKeyConcepts(photoId: string) {
+  const data = await postJson<{ concepts: string }>("/api/key-concepts", {
+    photo_id: photoId,
   });
   return data.concepts;
 }
 
-export function fetchQuizzes(concepts: string | null) {
-  return request<{ concepts: string; quizzes: Quiz[] | null }>("/api/quizzes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ concepts }),
+export function fetchQuizzes(photoId: string, concepts: string | null) {
+  return postJson<{ concepts: string; quizzes: Quiz[] | null }>("/api/quizzes", {
+    photo_id: photoId,
+    concepts,
   });
 }

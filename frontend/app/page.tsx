@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { Card, PageTitle, primaryButton, secondaryButton } from "@/components/ui";
 import { photoUrl, uploadPhoto } from "@/lib/api";
-import { setSession, useSession } from "@/lib/session";
+import { forgetPhotoIfMissing, setSession, useSession } from "@/lib/session";
 
 const ACCEPTED = /\.(jpe?g|png)$/i;
 
@@ -15,6 +15,8 @@ export default function HomePage() {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const photoId = session?.photoId ?? null;
+
   async function handleFile(file: File | undefined) {
     if (!file || uploading) return;
     if (!ACCEPTED.test(file.name)) {
@@ -24,8 +26,11 @@ export default function HomePage() {
     setError(null);
     setUploading(true);
     try {
-      await uploadPhoto(file);
-      setSession({ photoVersion: Date.now(), concepts: null, quizzes: null });
+      setSession({
+        photoId: await uploadPhoto(file),
+        concepts: null,
+        quizzes: null,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed.");
     } finally {
@@ -40,7 +45,7 @@ export default function HomePage() {
         subtitle="Upload a photo of your notes and get key concepts and quizzes to help you remember what you have learned."
       />
 
-      {session === null ? null : session.photoVersion === null ? (
+      {session === null ? null : photoId === null ? (
         <div className="rise">
           <button
             type="button"
@@ -99,8 +104,9 @@ export default function HomePage() {
         <Card>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={photoUrl(session.photoVersion)}
+            src={photoUrl(photoId)}
             alt="Your uploaded notes"
+            onError={() => forgetPhotoIfMissing(photoId)}
             className="max-h-[28rem] w-full rounded-xl border border-line bg-paper object-contain"
           />
           <p className="mt-6 text-sm font-medium text-muted">
@@ -117,7 +123,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() =>
-              setSession({ photoVersion: null, concepts: null, quizzes: null })
+              setSession({ photoId: null, concepts: null, quizzes: null })
             }
             className={`${secondaryButton} mt-3 w-full`}
           >

@@ -17,16 +17,17 @@ def response_text(response, error_message):
         raise EmptyResponseError(error_message)
     return text
 
-def get_key_concepts():
-    with open('saved_photo.jpg', 'rb') as f:
+def get_key_concepts(photo_path):
+    with open(photo_path, 'rb') as f:
         image_bytes = f.read()
+    mime_type = 'image/png' if photo_path.lower().endswith('.png') else 'image/jpeg'
     client = genai.Client(api_key=key)
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=[
             types.Part.from_bytes(
                 data=image_bytes,
-                mime_type='image/jpeg',
+                mime_type=mime_type,
             ),
         "You are an expert at extracting key information from study notes. "
         "Look at this image and identify the most important concepts a student."
@@ -65,12 +66,12 @@ def gemini_quizzes(concepts):
     except json.JSONDecodeError:
         return None
 
-def get_quizzes(concepts=None):
+def get_quizzes(photo_path, concepts=None):
     if concepts is None:
-        concepts = get_key_concepts()
+        concepts = get_key_concepts(photo_path)
     return concepts, gemini_quizzes(concepts)
 
 if __name__ == "__main__":
-    print(get_quizzes())
-    print(type(get_quizzes()))
+    import sys
+    print(get_quizzes(sys.argv[1]))
 
