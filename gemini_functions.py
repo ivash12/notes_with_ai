@@ -4,12 +4,20 @@ from google.genai import types
 import json
 import os
 from dotenv import load_dotenv
+from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 key = os.getenv("GEMINI_API_KEY")
 
 class EmptyResponseError(Exception):
     """Gemini answered without any text (e.g. a blocked or empty response)."""
+
+class UnreadableImageError(Exception):
+    """Gemini reported that it can't read the notes in the image."""
+
+class KeyConcepts(BaseModel):
+    readable: bool
+    concepts: str
 
 def response_text(response, error_message):
     text = (response.text or "").strip()
@@ -38,10 +46,27 @@ def get_key_concepts(photo_path):
         "skip minor details, examples, or repetition.\n\n"
         "Base your answer only on what is visible in the image. Do not add "
         "information from outside knowledge.\n\n"
-        "If the image is unclear, blurry, or contains no readable text, say so "
-        "explicitly instead of guessing."
-        ])
-    return response_text(response, "Gemini couldn't read anything from this image")
+        "If the image is unclear, blurry, or contains no readable notes, set "
+        "\"readable\" to false and leave \"concepts\" empty instead of guessing. "
+        "Otherwise set \"readable\" to true and put the paragraph in \"concepts\"."
+        ],
+        config=types.GenerateContentConfig(
+            response_mime_type='application/json',
+            response_schema=KeyConcepts,
+        ))
+    text = response_text(response, "Gemini couldn't read anything from this image")
+    try:
+        result = KeyConcepts.model_validate_json(text)
+    except ValidationError:
+        raise EmptyResponseError("Gemini gave an answer we couldn't understand. Please try again.")
+    if not result.readable:
+        raise UnreadableImageError(
+            "We couldn't read the notes in this photo. Try a sharper, well-lit "
+            "photo where the text is clearly visible."
+        )
+    if not result.concepts.strip():
+        raise EmptyResponseError("Gemini couldn't read anything from this image")
+    return result.concepts.strip()
 
 def gemini_quizzes(concepts):
     client = genai.Client(api_key=key)
