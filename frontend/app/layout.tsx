@@ -42,7 +42,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </span>
             Study with AI
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Link
+              href="/about"
+              className="rounded-xl px-3 py-2 text-sm font-medium text-muted transition hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              About
+            </Link>
+            <ThemeToggle />
+          </div>
         </header>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 pt-8 pb-16 sm:pt-12">
           {children}
