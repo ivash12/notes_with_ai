@@ -1,12 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Card, PageTitle, primaryButton, secondaryButton } from "@/components/ui";
 import { photoUrl, uploadPhoto } from "@/lib/api";
 import { forgetPhotoIfMissing, setSession, useSession } from "@/lib/session";
 
 const ACCEPTED = /\.(jpe?g|png)$/i;
+const PASTE_EXTENSIONS: Record<string, string> = {
+  "image/png": ".png",
+  "image/jpeg": ".jpg",
+};
+
+// A pasted screenshot may come without a usable name, but the backend goes by
+// the extension, so give it one that matches the image type.
+function namePastedImage(file: File) {
+  if (ACCEPTED.test(file.name)) return file;
+  const extension = PASTE_EXTENSIONS[file.type];
+  return extension ? new File([file], `pasted${extension}`, { type: file.type }) : file;
+}
 
 export default function HomePage() {
   const session = useSession();
@@ -37,6 +49,22 @@ export default function HomePage() {
       setUploading(false);
     }
   }
+
+  const onPaste = useEffectEvent((e: ClipboardEvent) => {
+    const file = Array.from(e.clipboardData?.files ?? []).find((f) =>
+      f.type.startsWith("image/"),
+    );
+    if (!file) return;
+    e.preventDefault();
+    handleFile(namePastedImage(file));
+  });
+
+  const waitingForPhoto = session !== null && photoId === null;
+  useEffect(() => {
+    if (!waitingForPhoto) return;
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [waitingForPhoto]);
 
   return (
     <>
@@ -81,7 +109,7 @@ export default function HomePage() {
               {uploading ? "Uploading…" : "Choose an image"}
             </span>
             <span className="text-sm text-muted">
-              Drag and drop it here, or click to browse · JPG, JPEG or PNG
+              Drag and drop it here, paste it (Ctrl+V), or click to browse · JPG, JPEG or PNG
             </span>
           </button>
           <input

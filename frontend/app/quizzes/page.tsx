@@ -43,9 +43,25 @@ export default function QuizzesPage() {
   );
 }
 
-function QuizForm({ quizzes }: { quizzes: Quiz[] }) {
+function shuffled<T>(items: T[]) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+// Gemini tends to put the correct answer in the same place, so the options are
+// shuffled on every attempt.
+function shuffleOptions(quizzes: Quiz[]) {
+  return quizzes.map((quiz) => ({ ...quiz, options: shuffled(quiz.options) }));
+}
+
+function QuizForm({ quizzes: original }: { quizzes: Quiz[] }) {
+  const [quizzes, setQuizzes] = useState(() => shuffleOptions(original));
   const [answers, setAnswers] = useState<(string | null)[]>(() =>
-    quizzes.map(() => null),
+    original.map(() => null),
   );
   const [checked, setChecked] = useState(false);
 
@@ -144,11 +160,16 @@ function QuizForm({ quizzes }: { quizzes: Quiz[] }) {
         );
       })}
 
+      {/* Separate keys so React swaps the element instead of flipping its
+          type: otherwise the click on "Try again" lands on a submit button
+          and re-checks the empty answers straight away. */}
       {checked ? (
         <button
+          key="retry"
           type="button"
           onClick={() => {
-            setAnswers(quizzes.map(() => null));
+            setQuizzes(shuffleOptions(original));
+            setAnswers(original.map(() => null));
             setChecked(false);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
@@ -157,7 +178,7 @@ function QuizForm({ quizzes }: { quizzes: Quiz[] }) {
           Try again
         </button>
       ) : (
-        <button type="submit" className={`${primaryButton} w-full`}>
+        <button key="check" type="submit" className={`${primaryButton} w-full`}>
           Check my answers
         </button>
       )}
