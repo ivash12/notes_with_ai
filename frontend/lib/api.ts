@@ -5,6 +5,8 @@ export type Quiz = {
   question: string;
   options: string[];
   correct: string;
+  // Missing on quizzes saved in a tab before explanations existed.
+  explanation?: string;
 };
 
 /** A response the backend answered with an error status. */

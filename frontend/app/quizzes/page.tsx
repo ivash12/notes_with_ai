@@ -156,6 +156,9 @@ function QuizForm({ quizzes: original }: { quizzes: Quiz[] }) {
                     : `✗ Your answer '${answer}' is incorrect. Correct answer is '${quiz.correct}'`}
               </p>
             )}
+            {checked && quiz.explanation && (
+              <p className="mt-2 text-sm leading-relaxed text-muted">{quiz.explanation}</p>
+            )}
           </Card>
         );
       })}
