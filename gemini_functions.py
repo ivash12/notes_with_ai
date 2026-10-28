@@ -55,10 +55,10 @@ def get_key_concepts(photo_path):
                 mime_type=mime_type,
             ),
         "You are an expert at extracting key information from study notes. "
-        "Look at this image and identify the most important concepts a student."
+        "Look at this image and identify the most important concepts a student "
         "needs to know to pass an exam on this material.\n\n"
-        "Write your response as a single paragraph of 3-5 sentences."
-        "Do not explain what student should know, just start directly with the concepts."
+        "Write your response as a single paragraph of 3-5 sentences. "
+        "Do not explain what a student should know, just start directly with the concepts. "
         "Focus only on the core ideas, definitions, and facts that are essential — "
         "skip minor details, examples, or repetition.\n\n"
         "Base your answer only on what is visible in the image. Do not add "
