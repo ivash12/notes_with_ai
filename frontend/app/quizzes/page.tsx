@@ -12,7 +12,7 @@ import {
   secondaryButton,
 } from "@/components/ui";
 import type { Quiz } from "@/lib/api";
-import { loadQuizzes, useSession } from "@/lib/session";
+import { loadQuizzes, setSession, useSession } from "@/lib/session";
 
 export default function QuizzesPage() {
   const session = useSession();
@@ -167,19 +167,32 @@ function QuizForm({ quizzes: original }: { quizzes: Quiz[] }) {
           type: otherwise the click on "Try again" lands on a submit button
           and re-checks the empty answers straight away. */}
       {checked ? (
-        <button
-          key="retry"
-          type="button"
-          onClick={() => {
-            setQuizzes(shuffleOptions(original));
-            setAnswers(original.map(() => null));
-            setChecked(false);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className={`${secondaryButton} w-full`}
-        >
-          Try again
-        </button>
+        <div key="retry" className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              setQuizzes(shuffleOptions(original));
+              setAnswers(original.map(() => null));
+              setChecked(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`${secondaryButton} flex-1`}
+          >
+            Try again
+          </button>
+          {/* Clearing the quiz makes the page fetch a new one; the concepts
+              stay cached, so it costs a single Gemini call. */}
+          <button
+            type="button"
+            onClick={() => {
+              setSession({ quizzes: null });
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`${primaryButton} flex-1`}
+          >
+            New quiz
+          </button>
+        </div>
       ) : (
         <button key="check" type="submit" className={`${primaryButton} w-full`}>
           Check my answers
